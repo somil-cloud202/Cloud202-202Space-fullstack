@@ -17,10 +17,10 @@ run:
     - name: PORT
       value: "3000"
     - name: DATABASE_URL
-      value: "postgresql://postgres:YOUR_DB_PASSWORD@YOUR_RDS_ENDPOINT:5432/myportal"
+      value: "postgresql://postgres:Cloud202space@myportal-db.c3c20wk6k62v.eu-west-2.rds.amazonaws.com:5432/myportal"
     - name: ADMIN_PASSWORD
       value: "admin123"
     - name: JWT_SECRET
-      value: "your-super-long-jwt-secret-key-at-least-32-characters-long"
+      value: "cloud202-super-secure-jwt-secret-key-for-production-use-2024"
     - name: OPENAI_API_KEY
-      value: "sk-proj-your-openai-api-key-if-you-have-one"
+      value: "sk-proj-placeholder-add-your-key-if-needed"
