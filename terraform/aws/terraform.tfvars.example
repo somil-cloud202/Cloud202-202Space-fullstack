@@ -1,0 +1,45 @@
+# Project Configuration
+project_name = "myportal"
+environment  = "production"
+aws_region   = "us-east-1"
+
+# Domain Configuration
+# Replace with your actual domain name
+domain_name = "portal.yourcompany.com"
+
+# Replace with your ACM certificate ARN
+# Create certificate in AWS Certificate Manager first
+certificate_arn = "arn:aws:acm:us-east-1:ACCOUNT_ID:certificate/CERTIFICATE_ID"
+
+# Optional: Route 53 hosted zone ID if managing DNS with Terraform
+# route53_zone_id = "Z1234567890ABC"
+
+# VPC Configuration
+vpc_cidr = "10.0.0.0/16"
+
+# Database Configuration
+db_instance_class    = "db.t3.small"  # Use db.t3.medium or larger for production
+db_allocated_storage = 20              # GB
+db_name              = "myportal"
+db_username          = "postgres"
+# IMPORTANT: Generate strong password with: openssl rand -base64 32
+db_password = "CHANGE_ME_STRONG_PASSWORD"
+
+# Redis Configuration
+redis_node_type = "cache.t3.micro"  # Use cache.t3.small or larger for production
+
+# ECS Configuration
+ecs_task_cpu       = "512"   # 0.5 vCPU (256, 512, 1024, 2048, 4096)
+ecs_task_memory    = "1024"  # 1 GB
+ecs_desired_count  = 2       # Number of tasks to run
+ecs_min_capacity   = 2       # Minimum for auto-scaling
+ecs_max_capacity   = 10      # Maximum for auto-scaling
+app_image_tag      = "latest"
+
+# Application Secrets
+# IMPORTANT: Generate these with strong random values
+# admin_password: openssl rand -base64 32
+# jwt_secret: openssl rand -base64 64
+admin_password  = "CHANGE_ME_STRONG_ADMIN_PASSWORD"
+jwt_secret      = "CHANGE_ME_STRONG_JWT_SECRET_64_CHARS"
+openai_api_key  = "sk-proj-YOUR_OPENAI_API_KEY_HERE"

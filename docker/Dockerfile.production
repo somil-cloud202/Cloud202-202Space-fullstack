@@ -1,0 +1,63 @@
+# Build stage
+FROM node:20-bookworm AS builder
+
+WORKDIR /app
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
+
+# Install all dependencies (including dev dependencies for building)
+RUN pnpm install --frozen-lockfile
+
+# Copy source code
+COPY . .
+
+# Generate Prisma Client
+RUN pnpm prisma generate
+
+# Build the application
+RUN pnpm build
+
+# Production stage
+FROM node:20-bookworm-slim AS runner
+
+WORKDIR /app
+
+# Install necessary runtime dependencies and tini
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    tini \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
+
+# Install only production dependencies
+RUN pnpm install --frozen-lockfile --prod
+
+# Copy built application from builder
+COPY --from=builder /app/.output /app/.output
+COPY --from=builder /app/node_modules/.prisma /app/node_modules/.prisma
+COPY --from=builder /app/prisma /app/prisma
+
+# Create a non-root user
+RUN useradd -m -u 1001 appuser && \
+    chown -R appuser:appuser /app
+
+USER appuser
+
+# Expose the application port
+EXPOSE 3000
+
+# Use tini as entrypoint for proper signal handling
+ENTRYPOINT ["/usr/bin/tini", "--"]
+
+# Run migrations and start the application
+CMD ["sh", "-c", "pnpm prisma migrate deploy && node .output/server/index.mjs"]

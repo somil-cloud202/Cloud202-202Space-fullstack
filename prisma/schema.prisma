@@ -1,0 +1,278 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                Int      @id @default(autoincrement())
+  employeeId        String   @unique
+  email             String   @unique
+  passwordHash      String
+  role              String   // 'employee', 'manager', 'admin'
+
+  // Personal Information
+  firstName         String
+  lastName          String
+  phone             String?
+  personalEmail     String?
+  profilePhotoUrl   String?
+  address           String?
+  emergencyContact  String?
+
+  // Employment Details
+  departmentId      Int?
+  designation       String?
+  managerId         Int?
+  employmentType    String?  // 'full-time', 'part-time', 'contractor'
+  joinDate          DateTime
+  endDate           DateTime?
+  status            String   @default("active") // 'active', 'inactive'
+
+  // Skills & Certifications
+  skills            String?
+  certifications    String?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  department        Department?          @relation(fields: [departmentId], references: [id])
+  manager           User?                @relation("ManagerToEmployee", fields: [managerId], references: [id])
+  managedEmployees  User[]               @relation("ManagerToEmployee")
+  projectAssignments ProjectAssignment[]
+  timeEntries       TimeEntry[]
+  leaveBalances     LeaveBalance[]
+  leaveRequests     LeaveRequest[]
+  payslips          Payslip[]
+  documents         Document[]
+  notifications     Notification[]
+  reviewedTimeEntries TimeEntry[]       @relation("TimeEntryReviewer")
+  reviewedLeaveRequests LeaveRequest[]  @relation("LeaveRequestReviewer")
+  backupLeaveRequests LeaveRequest[]    @relation("LeaveRequestBackup")
+  assignedTasks Task[]   @relation("TaskAssignee")
+  taskComments  TaskComment[] @relation("TaskCommentAuthor")
+  passwordResetToken PasswordResetToken?
+}
+
+model Department {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  headId    Int?
+  createdAt DateTime @default(now())
+
+  users     User[]
+}
+
+model Project {
+  id          Int      @id @default(autoincrement())
+  name        String
+  client      String?
+  description String?
+  startDate   DateTime?
+  endDate     DateTime?
+  budgetHours Float?
+  status      String   @default("active") // 'active', 'completed', 'on-hold'
+  customerEmail     String?
+  customerPhone     String?
+  sowFileUrl        String?
+  awsAccountNumber  String?
+  createdAt   DateTime @default(now())
+
+  assignments ProjectAssignment[]
+  timeEntries TimeEntry[]
+  sprints       Sprint[]
+  tasks         Task[]
+}
+
+model Sprint {
+  id          Int      @id @default(autoincrement())
+  projectId   Int
+  name        String
+  goal        String?
+  startDate   DateTime
+  endDate     DateTime
+  status      String   @default("planned") // 'planned', 'active', 'completed'
+  createdAt   DateTime @default(now())
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks       Task[]
+}
+
+model Task {
+  id              Int      @id @default(autoincrement())
+  projectId       Int
+  sprintId        Int?
+  title           String
+  description     String?
+  status          String   @default("todo") // 'todo', 'in-progress', 'done'
+  priority        String   @default("medium") // 'low', 'medium', 'high'
+  assignedToId    Int?
+  estimatedHours  Float?
+  createdAt       DateTime @default(now())
+
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sprint          Sprint?  @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+  assignedTo      User?    @relation("TaskAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  timeEntries     TimeEntry[] @relation("TimeEntryTask")
+  comments      TaskComment[]
+}
+
+model TaskComment {
+  id        Int      @id @default(autoincrement())
+  taskId    Int
+  userId    Int
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User     @relation("TaskCommentAuthor", fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ProjectAssignment {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  projectId  Int
+  role       String?
+  assignedAt DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id])
+  project    Project  @relation(fields: [projectId], references: [id])
+
+  @@unique([userId, projectId])
+}
+
+model TimeEntry {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  date          DateTime
+  projectId     Int
+  taskId        Int?
+  task          String
+  hours         Float
+  description   String?
+  isBillable    Boolean  @default(true)
+  status        String   @default("draft") // 'draft', 'submitted', 'approved', 'rejected'
+  submittedAt   DateTime?
+  reviewedBy    Int?
+  reviewedAt    DateTime?
+  reviewComment String?
+  createdAt     DateTime @default(now())
+
+  user          User     @relation(fields: [userId], references: [id])
+  project       Project  @relation(fields: [projectId], references: [id])
+  taskRecord    Task?    @relation("TimeEntryTask", fields: [taskId], references: [id], onDelete: SetNull)
+  reviewer      User?    @relation("TimeEntryReviewer", fields: [reviewedBy], references: [id])
+}
+
+model LeaveType {
+  id                Int      @id @default(autoincrement())
+  name              String   @unique
+  isPaid            Boolean  @default(true)
+  requiresApproval  Boolean  @default(true)
+  requiresAttachment Boolean @default(false)
+  defaultAllocated  Float    @default(0)
+  createdAt         DateTime @default(now())
+
+  leaveBalances     LeaveBalance[]
+  leaveRequests     LeaveRequest[]
+}
+
+model LeaveBalance {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  year        Int
+  leaveTypeId Int
+  allocated   Float
+  used        Float    @default(0)
+  balance     Float
+
+  user        User      @relation(fields: [userId], references: [id])
+  leaveType   LeaveType @relation(fields: [leaveTypeId], references: [id])
+
+  @@unique([userId, year, leaveTypeId])
+}
+
+model LeaveRequest {
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  leaveTypeId     Int
+  startDate       DateTime
+  endDate         DateTime
+  isHalfDay       Boolean  @default(false)
+  halfDayPeriod   String?  // 'AM', 'PM'
+  reason          String
+  attachmentUrl   String?
+  backupUserId    Int?     // Employee who will cover during leave
+  status          String   @default("pending") // 'pending', 'approved', 'rejected', 'cancelled'
+  reviewedBy      Int?
+  reviewedAt      DateTime?
+  reviewComment   String?
+  createdAt       DateTime @default(now())
+
+  user            User      @relation(fields: [userId], references: [id])
+  leaveType       LeaveType @relation(fields: [leaveTypeId], references: [id])
+  backupUser      User?     @relation("LeaveRequestBackup", fields: [backupUserId], references: [id])
+  reviewer        User?     @relation("LeaveRequestReviewer", fields: [reviewedBy], references: [id])
+}
+
+model Holiday {
+  id         Int      @id @default(autoincrement())
+  name       String
+  date       DateTime
+  year       Int
+  isOptional Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+model Payslip {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  month     Int
+  year      Int
+  fileUrl   String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, month, year])
+}
+
+model Document {
+  id           Int      @id @default(autoincrement())
+  userId       Int?
+  documentType String   // 'personal', 'company', 'tax', 'policy'
+  name         String
+  fileUrl      String
+  uploadedAt   DateTime @default(now())
+
+  user         User?    @relation(fields: [userId], references: [id])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model PasswordResetToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

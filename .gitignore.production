@@ -1,0 +1,28 @@
+# Production Environment Files
+.env
+.env.production
+.env.local
+
+# Backups
+backups/
+*.sql
+*.dump
+
+# SSL Certificates
+*.pem
+*.key
+*.crt
+*.csr
+
+# Secrets
+secrets/
+*.secret
+
+# Production Logs
+logs/
+*.log
+
+# Docker volumes (if extracted)
+postgres-data/
+redis-data/
+minio-data/
