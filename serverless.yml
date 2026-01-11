@@ -1,0 +1,30 @@
+service: myportal-backend
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  stage: ${opt:stage, 'prod'}
+  environment:
+    NODE_ENV: production
+    DATABASE_URL: ${env:DATABASE_URL}
+    JWT_SECRET: ${env:JWT_SECRET}
+    ADMIN_PASSWORD: ${env:ADMIN_PASSWORD}
+    OPENAI_API_KEY: ${env:OPENAI_API_KEY}
+
+functions:
+  api:
+    handler: src/server/lambda.handler
+    events:
+      - http:
+          path: /{proxy+}
+          method: ANY
+          cors: true
+    timeout: 30
+
+plugins:
+  - serverless-offline
+
+custom:
+  serverless-offline:
+    httpPort: 3001

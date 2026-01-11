@@ -1,0 +1,26 @@
+version: 1.0
+runtime: docker
+build:
+  commands:
+    build:
+      - echo "Build started on `date`"
+      - docker build -f docker/Dockerfile.production -t myportal .
+run:
+  runtime-version: latest
+  command: npm start
+  network:
+    port: 3000
+    env: PORT
+  env:
+    - name: NODE_ENV
+      value: production
+    - name: PORT
+      value: "3000"
+    - name: DATABASE_URL
+      value: "postgresql://postgres:yourpassword@your-rds-endpoint:5432/myportal"
+    - name: ADMIN_PASSWORD
+      value: "your-admin-password"
+    - name: JWT_SECRET
+      value: "your-jwt-secret"
+    - name: OPENAI_API_KEY
+      value: "your-openai-key"

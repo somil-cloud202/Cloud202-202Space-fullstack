@@ -3,7 +3,7 @@
   "scripts": {
     "postinstall": "dotenv -e .env -- prisma generate && tsr generate",
     "dev": "vinxi dev",
-    "build": "vinxi build",
+    "build": "tsr generate && vite build",
     "start": "vinxi start",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . -c eslint.config.mjs --max-warnings 0",
