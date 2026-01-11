@@ -6,10 +6,11 @@ build:
       - npm install -g pnpm
       - pnpm install --frozen-lockfile
       - pnpm prisma generate
+      - pnpm tsr generate
     build:
-      - pnpm build
+      - pnpm vite build
 run:
-  command: pnpm start
+  command: pnpm vinxi start
   network:
     port: 3000
     env: PORT
