@@ -39,15 +39,9 @@ RUN npm install -g pnpm
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
 
-# Install only production dependencies (skip postinstall scripts)
-RUN pnpm install --frozen-lockfile --prod --ignore-scripts
-
-# Manually generate Prisma client (since we skipped postinstall)
-RUN pnpm prisma generate
-
-# Copy built application from builder
+# Copy built application and node_modules from builder
 COPY --from=builder /app/.output /app/.output
-COPY --from=builder /app/node_modules/.prisma /app/node_modules/.prisma
+COPY --from=builder /app/node_modules /app/node_modules
 COPY --from=builder /app/prisma /app/prisma
 
 # Create a non-root user
