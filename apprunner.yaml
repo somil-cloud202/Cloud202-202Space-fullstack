@@ -6,7 +6,6 @@ build:
       - echo "Build started on `date`"
       - docker build -f docker/Dockerfile.production -t myportal .
 run:
-  runtime-version: latest
   command: npm start
   network:
     port: 3000
